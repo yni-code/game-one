@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Capit Boneka 3D</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{--bg:#fff1e6;--fg:#2b1a3a;--pan:#2b1a3a;--btn:#ff5d8f;--btn2:#ffb703;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#150d1f;--fg:#ffe9d6}}
+:root[data-theme="dark"]{--bg:#150d1f;--fg:#ffe9d6}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:'Fredoka',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;padding:12px;gap:10px;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+h1{margin:0;font-size:1.6rem;font-weight:700}
+#hud{display:flex;gap:18px;font-size:1.05rem;font-weight:500}
+#wrap{width:100%;max-width:460px;border-radius:18px;border:6px solid var(--pan);overflow:hidden;background:#1d1236;line-height:0}
+#wrap canvas{width:100%;height:auto;cursor:grab;touch-action:none}
+#msg{min-height:1.5em;font-weight:500;text-align:center}
+#pad{display:flex;align-items:center;background:var(--pan);padding:12px 18px;border-radius:20px;width:100%;max-width:460px;justify-content:space-between}
+#dp{display:grid;grid-template-columns:repeat(3,56px);grid-template-rows:repeat(3,56px);gap:4px}
+button{font:inherit;font-weight:700;border:0;cursor:pointer;color:#fff;touch-action:none}
+.mv{border-radius:14px;font-size:1.4rem;background:#6c5ce7;box-shadow:0 4px 0 #3f33a5}
+.mv:active,#go:active{transform:translateY(4px);box-shadow:none}
+#go{width:100px;height:100px;border-radius:50%;font-size:1.15rem;background:var(--btn);box-shadow:0 6px 0 #b02a5a}
+button:focus-visible{outline:3px solid var(--btn2);outline-offset:3px}
+#again{border-radius:12px;background:var(--btn2);color:#2b1a3a;padding:8px 18px;display:none}
+</style></head><body>
+<h1>Capit Boneka 3D</h1>
+<div id="hud"><span>Sisa coba: <b id="tr">6</b></span><span>Boneka: <b id="wn">0</b></span></div>
+<div id="wrap"></div>
+<div id="msg"></div>
+<div style="font-size:.85rem;opacity:.75;text-align:center;max-width:460px">Seret mesin untuk memutar pandangan, roda mouse untuk zoom, klik dua kali untuk reset. Arah tombol mengikuti sudut pandang.</div>
+<button id="again">Main lagi</button>
+<div id="pad">
+<div id="dp">
+<span></span><button class="mv" id="bu" aria-label="Maju">▲</button><span></span>
+<button class="mv" id="bl" aria-label="Kiri">◀</button><span></span><button class="mv" id="br" aria-label="Kanan">▶</button>
+<span></span><button class="mv" id="bd" aria-label="Mundur">▼</button><span></span>
+</div>
+<button id="go">DROP</button>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const sc=new THREE.Scene();sc.background=new THREE.Color('#1d1236');
+const cam=new THREE.PerspectiveCamera(48,460/560,.1,100);let yaw=0,pit=.18,dist=17.8;const LK=new THREE.Vector3(0,3.3,0);
+function setCam(){cam.position.set(LK.x+dist*Math.sin(yaw)*Math.cos(pit),LK.y+dist*Math.sin(pit),LK.z+dist*Math.cos(yaw)*Math.cos(pit));cam.lookAt(LK)}
+setCam();
+const rd=new THREE.WebGLRenderer({antialias:true});rd.setPixelRatio(Math.min(devicePixelRatio,2));rd.setSize(460,560,false);$('wrap').appendChild(rd.domElement);
+sc.add(new THREE.HemisphereLight('#fff4e6','#4b3190',.95));
+const dl=new THREE.DirectionalLight('#fff',.8);dl.position.set(3,10,8);sc.add(dl);
+const pl=new THREE.PointLight('#ffd6a5',.6,30);pl.position.set(0,7,2);sc.add(pl);
+const mats={},M=c=>mats[c]||(mats[c]=new THREE.MeshStandardMaterial({color:c,roughness:.85}));
+const SG=new THREE.SphereGeometry(1,14,10),CG=new THREE.ConeGeometry(1,1,10),BG=new THREE.BoxGeometry(1,1,1);
+function ad(g,geo,col,x,y,z,sx,sy,sz,rx){const m=new THREE.Mesh(geo,M(col));m.position.set(x,y,z);m.scale.set(sx,sy||sx,sz||sx);if(rx)m.rotation.x=rx;g.add(m);return m}
+function bx(w,h,d,col,x,y,z,op){const m=new THREE.Mesh(BG,op?new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:op,depthWrite:false}):M(col));m.scale.set(w,h,d);m.position.set(x,y,z);sc.add(m);return m}
+// kabinet
+const HX0=-4.3,HX1=-2.5,HZ0=1.3,HZ1=3.4,HX=-3.4,HZ=2.35,TOPY=6,TIP=1.15;
+const sh=new THREE.Shape();sh.moveTo(-4.5,-3.7);sh.lineTo(4.5,-3.7);sh.lineTo(4.5,3.7);sh.lineTo(-4.5,3.7);sh.lineTo(-4.5,-3.7);
+const hl=new THREE.Path();hl.moveTo(HX0,-HZ1);hl.lineTo(HX1,-HZ1);hl.lineTo(HX1,-HZ0);hl.lineTo(HX0,-HZ0);hl.lineTo(HX0,-HZ1);sh.holes.push(hl);
+const fl=new THREE.Mesh(new THREE.ExtrudeGeometry(sh,{depth:.3,bevelEnabled:false}),M('#6b4cc2'));fl.rotation.x=-Math.PI/2;fl.position.y=-.3;sc.add(fl);
+bx(9.4,1.1,7.6,'#4b3190',0,-1.95,0);bx(9.4,1.5,.3,'#4b3190',0,-.65,3.85);bx(1.8,.05,2.1,'#0d0716',(HX0+HX1)/2,-1.3,(HZ0+HZ1)/2);
+const cxh=(HX0+HX1)/2,czh=(HZ0+HZ1)/2;
+bx(1.9,.06,.1,'#ffb703',cxh,.02,HZ0);bx(1.9,.06,.1,'#ffb703',cxh,.02,HZ1);bx(.1,.06,2.2,'#ffb703',HX0,.02,czh);bx(.1,.06,2.2,'#ffb703',HX1,.02,czh);
+bx(9.2,7.3,.05,'#9ad1ff',0,3.65,-3.7,.14);bx(.05,7.3,7.4,'#9ad1ff',-4.5,3.65,0,.14);bx(.05,7.3,7.4,'#9ad1ff',4.5,3.65,0,.14);bx(9.2,7.3,.05,'#9ad1ff',0,3.65,3.7,.07);
+for(const x of[-4.6,4.6])for(const z of[-3.8,3.8])bx(.3,7.5,.3,'#ff5d8f',x,3.65,z);
+bx(9.6,1.3,7.8,'#2b1a3a',0,7.95,0);bx(.12,.12,7.4,'#cfd8e3',-4.2,7.1,0);bx(.12,.12,7.4,'#cfd8e3',4.2,7.1,0);
+const mc=document.createElement('canvas');mc.width=512;mc.height=64;const mg=mc.getContext('2d');mg.fillStyle='#ff5d8f';mg.fillRect(0,0,512,64);mg.fillStyle='#fff';mg.font='700 40px Fredoka,system-ui,sans-serif';mg.textAlign='center';mg.fillText('★ CAPIT BONEKA ★',256,46);
+const mq=new THREE.Mesh(new THREE.PlaneGeometry(8.6,1.05),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(mc)}));mq.position.set(0,7.95,3.92);sc.add(mq);
+// capit
+const beam=bx(8.6,.2,.2,'#cfd8e3',0,7.1,0),car=bx(.8,.35,.5,'#ffb703',0,7.1,0);
+const claw=new THREE.Group();sc.add(claw);
+const cab=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,1,6),M('#cfd8e3'));sc.add(cab);
+ad(claw,new THREE.CylinderGeometry(.32,.32,.28,16),'#ffb703',0,0,0,1);
+const piv=[];for(let i=0;i<3;i++){const a=i*2.094,pv=new THREE.Group();pv.rotation.y=a;const q=new THREE.Group();q.position.x=.26;pv.add(q);
+ ad(q,BG,'#e5e9ef',0,-.4,0,.11,.8,.11);const tp=new THREE.Group();tp.position.y=-.8;tp.rotation.z=-.75;q.add(tp);ad(tp,BG,'#e5e9ef',0,-.2,0,.1,.45,.1);claw.add(pv);piv.push(q)}
+// boneka
+const E=(g,y,z,c,s)=>{for(const k of[-1,1])ad(g,SG,c||'#111',k*.15,y,z,s||.05)};
+const BODY=(g,c,sx,sy,sz)=>{ad(g,SG,c,0,0,0,sx||.5,sy||.5,sz||.45)};
+const T=[
+ g=>{BODY(g,'#b8743c');ad(g,SG,'#b8743c',0,.62,.1,.4);for(const k of[-1,1])ad(g,SG,'#b8743c',k*.3,.95,.1,.14);ad(g,SG,'#f0d2a8',0,.55,.45,.17,.13,.1);ad(g,SG,'#111',0,.6,.55,.05);E(g,.7,.46)},
+ g=>{BODY(g,'#ffd1e3');ad(g,SG,'#ffd1e3',0,.62,.1,.4);for(const k of[-1,1]){ad(g,SG,'#ffd1e3',k*.16,1.3,.05,.1,.42,.08);ad(g,SG,'#ff9ec0',k*.16,1.3,.1,.05,.3,.04)}ad(g,SG,'#ff6f9f',0,.6,.5,.05);E(g,.7,.46)},
+ g=>{BODY(g,'#ffd23f',.52,.45,.5);ad(g,SG,'#ffd23f',0,.62,.1,.38);ad(g,CG,'#ff8c1a',0,.56,.52,.14,.26,.12,Math.PI/2);ad(g,SG,'#ffd23f',0,.05,-.5,.2,.2,.18);E(g,.72,.44)},
+ g=>{BODY(g,'#2d3142',.48,.58,.45);ad(g,SG,'#f5f5f5',0,-.04,.26,.34,.46,.25);ad(g,SG,'#2d3142',0,.7,.08,.36);ad(g,CG,'#ff8c1a',0,.64,.42,.1,.2,.1,Math.PI/2);E(g,.78,.38,'#fff',.07);E(g,.78,.43,'#111',.035);for(const k of[-1,1])ad(g,SG,'#ff8c1a',k*.2,-.56,.2,.14,.05,.2)},
+ g=>{BODY(g,'#9aa5b1');ad(g,SG,'#9aa5b1',0,.62,.1,.4);for(const k of[-1,1])ad(g,CG,'#9aa5b1',k*.25,1.05,.1,.14,.28,.14);ad(g,SG,'#ff9ec0',0,.58,.5,.05);E(g,.7,.45,'#3ddc84',.07);E(g,.7,.51,'#111',.03)},
+ g=>{BODY(g,'#fafafa');ad(g,SG,'#fafafa',0,.62,.1,.4);for(const k of[-1,1]){ad(g,SG,'#111',k*.3,.95,.1,.14);ad(g,SG,'#111',k*.15,.68,.45,.1,.12,.05);ad(g,SG,'#fff',k*.15,.7,.49,.03);ad(g,SG,'#111',k*.48,0,.1,.14,.3,.14)}ad(g,SG,'#111',0,.57,.5,.06,.04,.04)},
+ g=>{BODY(g,'#58c85a',.52,.45,.5);ad(g,SG,'#58c85a',0,.55,.12,.42,.32,.38);for(const k of[-1,1]){ad(g,SG,'#58c85a',k*.2,.92,.1,.15);ad(g,SG,'#fff',k*.2,.95,.2,.11);ad(g,SG,'#111',k*.2,.95,.29,.05)}ad(g,SG,'#e24a5a',0,.42,.46,.2,.03,.05)}
+];
+// permainan
+let st,cx,cy,cz,open,P,held,oy,tries,won,key={l:0,r:0,u:0,d:0},drop=0,wait=0,slip,slipY,ac;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),inHole=(x,z)=>x>HX0&&x<HX1&&z>HZ0&&z<HZ1;
+function beep(f,d,tp){try{ac=ac||new AudioContext();const o=ac.createOscillator(),v=ac.createGain();o.type=tp||'square';o.frequency.value=f;v.gain.value=.04;o.connect(v);v.connect(ac.destination);o.start();o.stop(ac.currentTime+d)}catch(e){}}
+function say(t){$('msg').textContent=t}
+function hud(){$('tr').textContent=tries;$('wn').textContent=won}
+function target(p){if(p.win)return -9;let t=p.r;for(const q of P){if(q===p||q===held||q.win||q.y>=p.y)continue;const d=Math.hypot(p.x-q.x,p.z-q.z),m=(p.r+q.r)*.8;if(d<m)t=Math.max(t,q.y+Math.sqrt(m*m-d*d))}return t}
+function init(){if(P)for(const p of P)sc.remove(p.g);
+ tries=6;won=0;P=[];held=null;
+ for(let i=0;i<24;i++){const g=new THREE.Group();T[i%7](g);const s=.9+Math.random()*.25;g.scale.setScalar(s);g.rotation.y=Math.random()*6.28;sc.add(g);
+  let x,z,n=0;do{x=(Math.random()*2-1)*3.8;z=(Math.random()*2-1)*3.1;n++}while((x<-1.7&&z>.7||P.some(q=>Math.hypot(q.x-x,q.z-z)<.55))&&n<60);
+  const p={g,x,z,y:99,r:.5*s,vy:0,win:0};p.y=target(p);P.push(p)}
+ cx=0;cz=0;cy=TOPY;open=1;st='idle';wait=0;say('Geser capit ke atas boneka, lalu tekan DROP.');hud();$('again').style.display='none'}
+function nearest(){let b=null,bd=0;for(const p of P){if(p.win)continue;const d=Math.hypot(p.x-cx,p.z-cz);if(d<.55&&cy-TIP<=p.y+1&&(!b||p.y>b.y)){b=p;bd=d}}return b&&{b,bd}}
+function update(){
+ if(st==='idle'){const q=((Math.round(yaw/(Math.PI/2))%4)+4)%4;let ix=key.r-key.l,iz=key.d-key.u,t;for(let i=0;i<q;i++){t=ix;ix=iz;iz=-t}
+  cx=clamp(cx+ix*.05,-3.9,3.9);cz=clamp(cz+iz*.05,-3,3);
+  if(drop&&tries>0){tries--;hud();st='down';say('');beep(300,.1)}
+  else if(tries===0&&!P.some(p=>p.win)){st='over';say(won?`Selesai! Kamu dapat ${won} boneka 🎉`:'Selesai! Belum dapat boneka, coba lagi ya.');$('again').style.display='inline-block'}}
+ drop=0;
+ if(st==='down'){cy-=.06;let s=.05;for(const p of P){if(p.win||p===held)continue;if(Math.hypot(p.x-cx,p.z-cz)<.75)s=Math.max(s,p.y+1)}if(cy-TIP<=s){cy=s+TIP;st='close'}}
+ else if(st==='close'){open-=.03;if(open<=.1){open=.1;const r=nearest();
+   if(r&&Math.random()<.85-r.bd*.8){held=r.b;oy=held.y-cy;slip=Math.random()<.35;slipY=2.5+Math.random()*2.5;beep(520,.12)}
+   st='up'}}
+ else if(st==='up'){cy+=.05;if(held&&slip&&cy>slipY){held=null;slip=0;say('Yah, lepas!');beep(160,.3,'sawtooth')}
+  if(cy>=TOPY){cy=TOPY;st='home'}}
+ else if(st==='home'){const dx=HX-cx,dz=HZ-cz;cx+=Math.abs(dx)<.06?dx:Math.sign(dx)*.06;cz+=Math.abs(dz)<.06?dz:Math.sign(dz)*.06;if(!dx&&!dz||Math.abs(dx)<.01&&Math.abs(dz)<.01)st='release'}
+ else if(st==='release'){open+=.03;if(open>.6&&held){held.vy=0;if(inHole(held.x,held.z))held.win=1;else if(held.x<HX1+.4&&held.x>HX0-.4&&held.z>HZ0-.4)held.z=HZ0-.45;held=null}
+  if(open>=1){open=1;if(++wait>40){wait=0;st='idle'}}}
+ if(held){held.x=cx;held.z=cz;held.y=cy+oy;held.vy=0}
+ for(let i=P.length-1;i>=0;i--){const p=P[i];if(p===held)continue;const t=target(p);
+  if(p.y>t+.001||p.win){p.vy-=.02;p.y=Math.max(t,p.y+p.vy);if(p.y<=t&&!p.win)p.vy=0}
+  if(p.win&&p.y<-1){sc.remove(p.g);P.splice(i,1);won++;hud();say('Dapat boneka! 🎉');beep(660,.12);setTimeout(()=>beep(880,.2),120)}}
+}
+function sync(){claw.position.set(cx,cy,cz);beam.position.z=cz;car.position.set(cx,7.1,cz);
+ cab.position.set(cx,(7.1+cy)/2,cz);cab.scale.y=7.1-cy;for(const q of piv)q.rotation.z=.75*open-.05;
+ for(const p of P)p.g.position.set(p.x,p.y,p.z)}
+function loop(){update();sync();rd.render(sc,cam);requestAnimationFrame(loop)}
+function hold(el,k){const on=e=>{e.preventDefault();key[k]=1;el.setPointerCapture&&el.setPointerCapture(e.pointerId)},off=()=>key[k]=0;
+ el.addEventListener('pointerdown',on);el.addEventListener('pointerup',off);el.addEventListener('pointercancel',off);el.addEventListener('lostpointercapture',off)}
+hold($('bl'),'l');hold($('br'),'r');hold($('bu'),'u');hold($('bd'),'d');
+$('go').addEventListener('pointerdown',e=>{e.preventDefault();drop=1});
+$('again').addEventListener('click',init);
+const KM={ArrowLeft:'l',a:'l',ArrowRight:'r',d:'r',ArrowUp:'u',w:'u',ArrowDown:'d',s:'d'};
+addEventListener('keydown',e=>{const k=KM[e.key];if(k){e.preventDefault();key[k]=1}else if(e.key===' '||e.key==='Enter'){e.preventDefault();drop=1}});
+addEventListener('keyup',e=>{const k=KM[e.key];if(k)key[k]=0});
+const cv=rd.domElement;let dr=null;
+cv.addEventListener('pointerdown',e=>{dr={x:e.clientX,y:e.clientY};cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing'});
+cv.addEventListener('pointermove',e=>{if(!dr)return;yaw-=(e.clientX-dr.x)*.008;pit=clamp(pit+(e.clientY-dr.y)*.006,.05,1.3);dr={x:e.clientX,y:e.clientY};setCam()});
+const endDrag=()=>{dr=null;cv.style.cursor='grab'};cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',endDrag);
+cv.addEventListener('wheel',e=>{e.preventDefault();dist=clamp(dist+e.deltaY*.01,10,26);setCam()},{passive:false});
+cv.addEventListener('dblclick',()=>{yaw=0;pit=.18;dist=17.8;setCam()});
+init();loop();
+</script></body></html>

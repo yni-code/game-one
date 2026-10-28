@@ -25,8 +25,7 @@ p{margin:0;font-size:13px;opacity:.75}
 <div id="nameModal"><div class="box"><h2>Siapa namamu?</h2><p>Isi username sekali saja untuk papan peringkat. Kosongkan kalau mau nama otomatis (Player 1, Player 2, dst).</p><input id="nameInput" maxlength="14" placeholder="Username" autocomplete="off"><button id="nameGo">Mulai main</button></div></div>
 <canvas id="c" width="360" height="540"></canvas>
 <p>Klik / tap / tekan Spasi untuk terbang</p>
-<script>
-// ====== ISI DUA BARIS INI DARI PROJECT SUPABASE KAMU ======
+<script>// ====== ISI DUA BARIS INI DARI PROJECT SUPABASE KAMU ======
 const SUPABASE_URL='https://bvdmhdkacbrbdladwqgu.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2ZG1oZGthY2JyYmRsYWR3cWd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxNDYzMTksImV4cCI6MjEwODcyMjMxOX0.pqilJayru2Zeze_L3xtm8kn_HKKgbRP4v_gFkSqsCec';
 // ==========================================================
@@ -146,21 +145,21 @@ function draw(){
   if(state!=='ready')text(score,W/2,70,44);
   if(state==='ready'){text('Flappy Face',W/2,150,38);text('Tap untuk mulai',W/2,H-GROUND-30,20);}
   if(state==='over'){
-    ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(22,92,W-44,318);
-    text('KAGET!',W/2,128,32);
-    text('Skor: '+score+'   Terbaik: '+best,W/2,160,18,'center',4);
-    text('PERINGKAT TOP 5',W/2,196,16,'center',4,'#9fd8ff');
+    ctx.fillStyle='rgba(0,0,0,.62)';ctx.fillRect(22,116,W-44,300);
+    text('KAGET!',W/2,150,32);
+    text('Skor: '+score+'   Terbaik: '+best,W/2,180,18,'center',4);
+    text('PERINGKAT TOP 5',W/2,212,16,'center',4,'#9fd8ff');
     if(top5.length){
       top5.forEach((r,i)=>{
-        const y=224+i*24,me=r.me,col=me?'#ffd84a':'#fff';
+        const y=238+i*23,me=r.me,col=me?'#ffd84a':'#fff';
         text((i+1)+'. '+String(r.name||'?').slice(0,14),40,y,16,'left',3,col);
         text(String(r.best),W-40,y,16,'right',3,col);
       });
-    }else text(net==='init'?'Memuat peringkat...':'Belum ada skor',W/2,260,15,'center',3);
-    if(myName)text('Kamu: '+myName,W/2,348,13,'center',3);
+    }else text(net==='init'?'Memuat peringkat...':'Belum ada skor',W/2,270,15,'center',3);
+    if(myName)text('Kamu: '+myName,W/2,356,13,'center',3);
     const msg=net==='off'?'Peringkat online belum diatur':net==='err'?'Gagal terhubung ke peringkat':'';
-    if(msg)text(msg,W/2,372,12,'center',3);
-    text('Tap untuk main lagi',W/2,396,16,'center',4);
+    if(msg)text(msg,W/2,376,12,'center',3);
+    text('Tap untuk main lagi',W/2,402,16,'center',4);
   }
   ctx.restore();
 }

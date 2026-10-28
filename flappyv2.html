@@ -25,7 +25,8 @@ p{margin:0;font-size:13px;opacity:.75}
 <div id="nameModal"><div class="box"><h2>Siapa namamu?</h2><p>Isi username sekali saja untuk papan peringkat. Kosongkan kalau mau nama otomatis (Player 1, Player 2, dst).</p><input id="nameInput" maxlength="14" placeholder="Username" autocomplete="off"><button id="nameGo">Mulai main</button></div></div>
 <canvas id="c" width="360" height="540"></canvas>
 <p>Klik / tap / tekan Spasi untuk terbang</p>
-<script>// ====== ISI DUA BARIS INI DARI PROJECT SUPABASE KAMU ======
+<script>
+// ====== ISI DUA BARIS INI DARI PROJECT SUPABASE KAMU ======
 const SUPABASE_URL='https://bvdmhdkacbrbdladwqgu.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2ZG1oZGthY2JyYmRsYWR3cWd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxNDYzMTksImV4cCI6MjEwODcyMjMxOX0.pqilJayru2Zeze_L3xtm8kn_HKKgbRP4v_gFkSqsCec';
 // ==========================================================
@@ -186,8 +187,9 @@ async function loadTop5(){
 async function submitScore(sc){
   if(!SB_OK){net='off';return;}
   try{
-    if(sc>0&&sc>=best){
-      const nm=await rpc('submit_score',{p_player:pid,p_name:myName,p_score:sc});
+    const top=Math.max(sc,best);
+    if(top>0){
+      const nm=await rpc('submit_score',{p_player:pid,p_name:myName,p_score:top});
       if(typeof nm==='string'&&nm){myName=nm;saveName(nm);}
     }
   }catch(e){net='err';return;}
